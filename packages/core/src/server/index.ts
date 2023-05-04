@@ -9,9 +9,9 @@ import figlet from 'figlet';
 
 import { Compiler } from '../compiler/index.js';
 import {
-  UserServerConfig,
   NormalizedServerConfig,
   normalizeDevServerOptions,
+  UserConfig
 } from '../config/index.js';
 import { hmr } from './middlewares/hmr.js';
 import { HmrEngine } from './hmr-engine.js';
@@ -20,6 +20,8 @@ import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { lazyCompilation } from './middlewares/lazy-compilation.js';
 import { resources } from './middlewares/resources.js';
+import net from 'net';
+import { restart } from '../index.js';
 
 /**
  * Farm Dev Server, responsible for:
@@ -30,6 +32,9 @@ import { resources } from './middlewares/resources.js';
  */
 export class DevServer {
   private _app: Koa;
+  private _server: net.Server;
+  private _options: UserConfig;
+  private _closeServer: () => void;
 
   ws: WebSocketServer;
   config: NormalizedServerConfig;
@@ -38,18 +43,18 @@ export class DevServer {
   constructor(
     private _compiler: Compiler,
     public logger: Logger,
-    options?: UserServerConfig
+    options?: UserConfig
   ) {
-    this.config = normalizeDevServerOptions(options, 'development');
+    this.config = normalizeDevServerOptions(options.server, 'development');
     this._app = new Koa();
-
+    this._options = options;
     // this._app.use(serve(this._dist));
     this._app.use(resources(this._compiler));
 
     if (this.config.hmr) {
       this.ws = new WebSocketServer({
         port: this.config.hmr.port,
-        host: this.config.hmr.host,
+        host: this.config.hmr.host
       });
       this._app.use(hmr(this));
       this.hmrEngine = new HmrEngine(this._compiler, this, this.logger);
@@ -75,7 +80,7 @@ export class DevServer {
 
     const end = Date.now();
 
-    this._app.listen(this.config.port);
+    this._server = this._app.listen(this.config.port);
     const version = JSON.parse(
       readFileSync(
         join(fileURLToPath(import.meta.url), '../../../package.json'),
@@ -86,7 +91,7 @@ export class DevServer {
       boxen(
         `${brandColor(
           figlet.textSync('FARM', {
-            width: 40,
+            width: 40
           })
         )}
 Version ${chalk.green.bold(version)}
@@ -100,10 +105,17 @@ Version ${chalk.green.bold(version)}
           margin: 1,
           align: 'center',
           borderColor: 'cyan',
-          borderStyle: 'round',
+          borderStyle: 'round'
         }
       ),
       false
     );
+  }
+  async close() {
+    await Promise.all([this.ws.close(), this._server.close()]);
+  }
+  async restart() {
+    await this.close();
+    restart(this._options);
   }
 }

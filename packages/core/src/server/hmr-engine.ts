@@ -2,7 +2,7 @@
 
 import {
   Compiler,
-  VIRTUAL_FARM_DYNAMIC_IMPORT_PREFIX,
+  VIRTUAL_FARM_DYNAMIC_IMPORT_PREFIX
 } from '../compiler/index.js';
 import { DevServer } from './index.js';
 // import debounce from 'lodash.debounce';
@@ -11,6 +11,8 @@ import { isAbsolute, relative } from 'path';
 import chalk from 'chalk';
 import type { Resource } from '@farmfe/runtime/src/resource-loader.js';
 import { JsUpdateResult } from '../../binding/binding.js';
+import { DEFAULT_CONFIG_NAMES } from '../config/index.js';
+import { basename } from 'path';
 
 export class HmrEngine {
   private _updateQueue: string[] = [];
@@ -79,7 +81,7 @@ export class HmrEngine {
         }
         dynamicResourcesMap[key] = value.map((r) => ({
           path: r[0],
-          type: r[1] as 'script' | 'link',
+          type: r[1] as 'script' | 'link'
         }));
       }
     }
@@ -104,14 +106,14 @@ export class HmrEngine {
     // @ts-ignore TODO fix this
     this._updateResults.set(id, {
       result: resultStr,
-      count: this._devServer.ws.clients.size,
+      count: this._devServer.ws.clients.size
     });
     // console.log(this._updateResults);
 
     this._devServer.ws.clients.forEach((client) => {
       client.send(
         JSON.stringify({
-          id,
+          id
         })
       );
     });
@@ -123,6 +125,11 @@ export class HmrEngine {
   };
 
   async hmrUpdate(path: string) {
+    const isConfig = DEFAULT_CONFIG_NAMES.includes(basename(path));
+    if (isConfig) {
+      // TODO 重启服务器
+      await this._devServer.restart();
+    }
     // if lazy compilation is enabled, we need to update the virtual module
     if (this._compiler.config.config.lazyCompilation) {
       const lazyCompiledModule = `${VIRTUAL_FARM_DYNAMIC_IMPORT_PREFIX}${path}`;

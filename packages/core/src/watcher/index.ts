@@ -2,6 +2,7 @@ import chokidar, { FSWatcher } from 'chokidar';
 import { Compiler } from '../compiler/index.js';
 
 import { DevServer } from '../server/index.js';
+import path from 'path';
 
 export interface FileWatcherOptions {
   ignores?: string[];
@@ -23,8 +24,10 @@ export class FileWatcher {
         ? serverOrCompiler.getCompiler()
         : serverOrCompiler;
 
-    this._watcher = chokidar.watch(compiler.resolvedModulePaths(this._root), {
-      ignored: this._options.ignores,
+    const watchFiles = compiler.resolvedModulePaths(this._root);
+    watchFiles.push(path.resolve(this._root, 'farm.config.ts'));
+    this._watcher = chokidar.watch(watchFiles, {
+      ignored: this._options.ignores
     });
 
     if (serverOrCompiler instanceof DevServer) {

@@ -24,13 +24,12 @@ export async function start(options: FarmCLIOptions): Promise<void> {
     logger,
     'start'
   );
-
   const normalizedConfig = await normalizeUserCompilationConfig(
     userConfig,
     'development'
   );
   const compiler = new Compiler(normalizedConfig);
-  const devServer = new DevServer(compiler, logger, userConfig.server);
+  const devServer = new DevServer(compiler, logger, userConfig);
 
   await devServer.listen();
   // Make sure the server is listening before we watch for file changes
@@ -81,4 +80,25 @@ export async function build(options: {
       normalizedConfig.config.output.path
     )}.`
   );
+}
+
+export async function restart(config: UserConfig) {
+  const options: FarmCLIOptions = { configPath: config.root };
+  const logger = options.logger ?? new DefaultLogger();
+  const userConfig: UserConfig = await resolveUserConfig(
+    options,
+    logger,
+    'start'
+  );
+
+  const normalizedConfig = await normalizeUserCompilationConfig(
+    userConfig,
+    'development'
+  );
+  const compiler = new Compiler(normalizedConfig);
+  const devServer = new DevServer(compiler, logger, userConfig);
+
+  await devServer.listen();
+
+  logger.info('restart success ');
 }
