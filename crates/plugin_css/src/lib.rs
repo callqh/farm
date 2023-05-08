@@ -377,9 +377,14 @@ impl Plugin for FarmPluginCss {
 
   fn analyze_deps(
     &self,
-    _param: &mut PluginAnalyzeDepsHookParam,
+    param: &mut PluginAnalyzeDepsHookParam,
     _context: &Arc<CompilationContext>,
   ) -> farmfe_core::error::Result<Option<()>> {
+    if matches!(param.module.module_type, ModuleType::Css) {
+      let ast = &param.module.meta.as_css().ast;
+      println!("【 ast 】==> {:?}", ast);
+    }
+
     Ok(None)
   }
 

@@ -61,6 +61,7 @@ pub fn codegen_css_stylesheet(
   let mut gen = CodeGenerator::new(css_writer, CodegenConfig { minify });
 
   gen.emit(stylesheet).unwrap();
+  println!("【 css_code 】==> {:?}", css_code);
 
   if let Some(cm) = cm {
     let src_map = build_source_map(&source_map, cm, AstModule::Css(stylesheet));

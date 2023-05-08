@@ -72,12 +72,26 @@ impl Plugin for FarmPluginSass {
       });
       let string_options = self.get_sass_options(param.resolved_path.to_string());
       let compile_result = sass.compile_string(&param.content, string_options).unwrap();
+      // self.
+      println!("【 compile_result 】==> {:?}", compile_result);
       return Ok(Some(farmfe_core::plugin::PluginTransformHookResult {
         content: compile_result.css,
         source_map: None,
         module_type: Some(farmfe_core::module::ModuleType::Css),
       }));
     }
+    Ok(None)
+  }
+
+  fn analyze_deps(
+    &self,
+    param: &mut farmfe_core::plugin::PluginAnalyzeDepsHookParam,
+    _context: &std::sync::Arc<farmfe_core::context::CompilationContext>,
+  ) -> farmfe_core::error::Result<Option<()>> {
+    if matches!(
+      param.module.module_type,
+      ModuleType::Custom(String::from("sass"))
+    ) {}
     Ok(None)
   }
 }
